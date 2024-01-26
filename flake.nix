@@ -8,6 +8,10 @@
           buildInputs = with pkgs; [
             openjdk11
           ];
+          GTK_THEME = "Breeze:light";
+          shellHook = ''
+            export PATH="${self}/tools:$PATH"
+          '';
         };
     };
 }
