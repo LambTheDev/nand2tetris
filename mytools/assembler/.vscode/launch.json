@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "run assembler",
+            "program": "${workspaceFolder}/target/debug/assembler",
+            "args": [ "../../projects/06/max/Max.asm" ],
+            "cwd": "${workspaceFolder}",
+            "sourceMap": {},
+            "sourceLanguages": [
+                "rust"
+            ],
+        }
+    ]
+}
