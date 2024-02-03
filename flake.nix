@@ -16,6 +16,7 @@
           buildInputs = [
             pkgs.openjdk11
             packages.${system}.assembler
+            packages.${system}.translator
           ];
           GTK_THEME = "Breeze:light";
           shellHook = ''
@@ -35,6 +36,7 @@
       };
       packages.${system} = {
         assembler = naersk'.buildPackage ./mytools/assembler;
+        translator = naersk'.buildPackage ./mytools/translator;
       };
     };
 }

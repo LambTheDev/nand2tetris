@@ -4,13 +4,14 @@
             "type": "lldb",
             "request": "launch",
             "name": "run assembler",
-            "program": "${workspaceFolder}/target/debug/assembler",
-            "args": [ "../../projects/07/StackArithmetic/SimpleAdd/SimpleAdd.asm" ],
+            "program": "${workspaceFolder}/target/debug/translator",
+            "args": [ "../../projects/07/StackArithmetic/SimpleAdd/SimpleAdd.vm" ],
             "cwd": "${workspaceFolder}",
             "sourceMap": {},
             "sourceLanguages": [
                 "rust"
             ],
+            "preLaunchTask": "${defaultBuildTask}"
         }
     ]
 }
