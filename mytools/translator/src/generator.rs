@@ -1,12 +1,58 @@
-use crate::command::*;
+use crate::{command::Command, labeler::Labeler};
 
-pub fn generate_code(counter: &mut u16, command: Command) -> Vec<String> {
+pub fn generate_code(labeler: &mut Labeler, command: Command) -> Vec<String> {
     match command {
-        Command::Push(s, i) => generate_code_push(s.as_str(), i),
-        Command::Pop(s, i) => generate_code_pop(s.as_str(), i),
-        Command::Arithmetic(s) => generate_code_arithmetic(counter, s.as_str()),
+        Command::Arithmetic(s) => generate_code_arithmetic(labeler, s.as_str()),
+        Command::Call(s, u) => generate_code_call(labeler, s.as_str(), u),
+        Command::Function(s, u) => generate_code_function(s.as_str(), u),
+        Command::Goto(s) => vec![format!("@{s}"), "0;JMP".into()],
+        Command::If(s) => generate_code_if(s.as_str()),
+        Command::Label(s) => vec![format!("({s})")],
+        Command::Pop(s, u) => generate_code_pop(s.as_str(), u),
+        Command::Push(s, u) => generate_code_push(s.as_str(), u),
+        Command::Return => generate_code_return(),
         _ => unimplemented!(),
     }
+}
+
+fn generate_code_arithmetic(labeler: &mut Labeler, s: &str) -> Vec<String> {
+    let code = match s {
+        "add" => include_str!("./asm/add.asm").to_owned(),
+        "sub" => include_str!("./asm/sub.asm").to_owned(),
+        "neg" => include_str!("./asm/neg.asm").to_owned(),
+        "eq" => format!(include_str!("./asm/eq.asm"), labeler.generate("$eq")),
+        "gt" => format!(include_str!("./asm/gt.asm"), labeler.generate("$gt")),
+        "lt" => format!(include_str!("./asm/lt.asm"), labeler.generate("$lt")),
+        "and" => include_str!("./asm/and.asm").to_owned(),
+        "or" => include_str!("./asm/or.asm").to_owned(),
+        "not" => include_str!("./asm/not.asm").to_owned(),
+        _ => panic!("Unknown operation '{s}'."),
+    };
+
+    code.lines().map(String::from).collect()
+}
+
+fn generate_code_call(labeler: &mut Labeler, s: &str, u: u16) -> Vec<String> {
+    let code = format!(
+        include_str!("./asm/call.asm"),
+        s,
+        5 + u,
+        labeler.generate("$retn")
+    );
+    code.lines().map(String::from).collect()
+}
+
+fn generate_code_function(s: &str, u: u16) -> Vec<String> {
+    let mut lines = vec![format!("//** function {s}"), format!("({s})")];
+    for _ in 0..u {
+        lines.push(format!(include_str!("./asm/push_constant.asm"), 0));
+    }
+    lines
+}
+
+fn generate_code_if(s: &str) -> Vec<String> {
+    let code = format!(include_str!("./asm/if.asm"), s);
+    code.lines().map(String::from).collect()
 }
 
 fn generate_code_pop(s: &str, u: u16) -> Vec<String> {
@@ -40,20 +86,7 @@ fn generate_code_push(s: &str, u: u16) -> Vec<String> {
     code.lines().map(String::from).collect()
 }
 
-fn generate_code_arithmetic(counter: &mut u16, s: &str) -> Vec<String> {
-    let code = match s {
-        "add" => include_str!("./asm/add.asm").to_owned(),
-        "sub" => include_str!("./asm/sub.asm").to_owned(),
-        "neg" => include_str!("./asm/neg.asm").to_owned(),
-        "eq" => format!(include_str!("./asm/eq.asm"), *counter),
-        "gt" => format!(include_str!("./asm/gt.asm"), *counter),
-        "lt" => format!(include_str!("./asm/lt.asm"), *counter),
-        "and" => include_str!("./asm/and.asm").to_owned(),
-        "or" => include_str!("./asm/or.asm").to_owned(),
-        "not" => include_str!("./asm/not.asm").to_owned(),
-        _ => panic!("Unknown operation '{s}'."),
-    };
-    *counter += 1;
-
+fn generate_code_return() -> Vec<String> {
+    let code = include_str!("./asm/return.asm");
     code.lines().map(String::from).collect()
 }
