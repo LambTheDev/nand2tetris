@@ -1,5 +1,10 @@
 use crate::{command::Command, labeler::Labeler};
 
+pub fn generate_bootstrap() -> Vec<String> {
+    let code = include_str!("./asm/bootstrap.asm").to_owned();
+    code.lines().map(String::from).collect()
+}
+
 pub fn generate_code(labeler: &mut Labeler, command: Command) -> Vec<String> {
     match command {
         Command::Arithmetic(s) => generate_code_arithmetic(labeler, s.as_str()),
@@ -11,7 +16,6 @@ pub fn generate_code(labeler: &mut Labeler, command: Command) -> Vec<String> {
         Command::Pop(s, u) => generate_code_pop(s.as_str(), u),
         Command::Push(s, u) => generate_code_push(s.as_str(), u),
         Command::Return => generate_code_return(),
-        _ => unimplemented!(),
     }
 }
 
@@ -43,7 +47,11 @@ fn generate_code_call(labeler: &mut Labeler, s: &str, u: u16) -> Vec<String> {
 }
 
 fn generate_code_function(s: &str, u: u16) -> Vec<String> {
-    let mut lines = vec![format!("//** function {s}"), format!("({s})")];
+    let mut lines = vec![
+        String::new(),
+        format!("//** function {s}"),
+        format!("({s})"),
+    ];
     for _ in 0..u {
         lines.push(format!(include_str!("./asm/push_constant.asm"), 0));
     }

@@ -1,13 +1,15 @@
 #![warn(clippy::all, clippy::pedantic)]
 
 use std::env;
-use std::fs::File;
+use std::fs::{read_dir, File};
 use std::io::{BufRead, BufReader, LineWriter, Write};
+use std::path::{Path, PathBuf};
 
 mod command;
 mod generator;
 mod labeler;
 
+use generator::generate_bootstrap;
 use labeler::Labeler;
 
 use crate::command::Command;
@@ -16,22 +18,49 @@ use crate::generator::generate_code;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
-    let input_path = env::args().nth(1).ok_or("expected input")?;
-    let output_path = input_path.replace(".vm", ".asm");
+    let input_str = env::args().nth(1).ok_or("expected input")?;
+    let input_path = PathBuf::from(input_str);
+    let (input_files, mut output_path) = if input_path.is_dir() {
+        let input_files: Vec<_> = read_dir(&input_path)?
+            .filter_map(std::result::Result::ok)
+            .map(|x| x.path())
+            .filter_map(|x| match x.extension() {
+                Some(ext) if ext == "vm" => Some(x),
+                _ => None,
+            })
+            .collect();
+        let output_file_name: Box<dyn AsRef<Path>> = match input_path.file_name() {
+            Some(x) => Box::new(x),
+            None => Box::new("output"),
+        };
+        (input_files, input_path.join(output_file_name.as_ref()))
+    } else {
+        (vec![input_path.clone()], input_path)
+    };
+    output_path.set_extension("asm");
 
-    let reader = BufReader::new(File::open(&input_path)?);
     let writable = File::create(output_path)?;
     let mut writer = LineWriter::new(writable);
     let mut labeler = Labeler::new();
 
-    for line in reader.lines().flatten() {
-        let command = parse(&line)?;
-        if command.is_none() {
-            continue;
+    if input_files.len() > 1 {
+        let lines = generate_bootstrap();
+        for line in lines {
+            writeln!(writer, "{line}")?;
         }
-        let lines = generate_code(&mut labeler, command.unwrap());
-        for code in lines {
-            writeln!(writer, "{code}")?;
+    }
+
+    for file in input_files {
+        let reader = BufReader::new(File::open(file)?);
+        for line in reader.lines().flatten() {
+            let command = parse(&line)?;
+            if command.is_none() {
+                continue;
+            }
+            let lines = generate_code(&mut labeler, command.unwrap());
+            for line in lines {
+                writeln!(writer, "{line}")?;
+            }
         }
     }
     Ok(())

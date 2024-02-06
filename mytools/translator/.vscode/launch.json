@@ -5,7 +5,7 @@
             "request": "launch",
             "name": "run assembler",
             "program": "${workspaceFolder}/target/debug/translator",
-            "args": [ "../../projects/07/StackArithmetic/SimpleAdd/SimpleAdd.vm" ],
+            "args": [ "../../projects/08/FunctionCalls/FibonacciElement" ],
             "cwd": "${workspaceFolder}",
             "sourceMap": {},
             "sourceLanguages": [
